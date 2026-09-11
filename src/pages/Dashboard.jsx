@@ -1,0 +1,139 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import styles from "../styles/dashboard.module.css";
+import { useUser } from "../context/AuthContext";
+import { apiFetch } from "../lib/apiFetch";
+
+function Dashboard() {
+  const [stats, setStats] = useState(null);
+  const [courses, setCourses] = useState([]);
+  const [examResults, setExamResults] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { user, userLoading } = useUser();
+
+  useEffect(() => {
+    if (userLoading) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    apiFetch("/dashboard")
+      .then(data => {
+        setStats(data.stats);
+        setCourses(data.courses);
+        setExamResults(data.examResults);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, [userLoading, user]);
+
+  function scoreClass(percent) {
+    if (percent >= 70) return styles.scoreGood;
+    if (percent >= 50) return styles.scoreMid;
+    return styles.scoreLow;
+  }
+
+  if (userLoading || loading) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.statsGrid}>
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className={styles.statCard}>
+              <div className={styles.skeletonLine} style={{ width: "80px" }} />
+              <div className={styles.skeletonLine} style={{ width: "50px", height: 22, marginTop: 8 }} />
+            </div>
+          ))}
+        </div>
+
+        <div className={styles.skeletonLine} style={{ width: "160px", height: 16, margin: "24px 0 12px" }} />
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className={styles.courseRow}>
+            <div className={styles.skeletonLine} style={{ width: "35%" }} />
+            <div className={styles.skeletonLine} style={{ flex: 1, height: 6 }} />
+            <div className={styles.skeletonLine} style={{ width: "30px" }} />
+            <div className={styles.skeletonLine} style={{ width: "80px", height: 30, borderRadius: 8 }} />
+          </div>
+        ))}
+
+        <div className={styles.skeletonLine} style={{ width: "180px", height: 16, margin: "24px 0 12px" }} />
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className={styles.examRow}>
+            <div className={styles.skeletonLine} style={{ width: "50%" }} />
+            <div className={styles.skeletonLine} style={{ width: "44px", height: 24, borderRadius: 12 }} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!user) {
+    navigate("/auth");
+    return null;
+  }
+
+  return (
+    <div className={styles.page}>
+      <div className={styles.statsGrid}>
+        <div className={styles.statCard}>
+          <p className={styles.statLabel}>Courses started</p>
+          <p className={styles.statValue}>{stats.coursesStarted}</p>
+        </div>
+        <div className={styles.statCard}>
+          <p className={styles.statLabel}>Courses completed</p>
+          <p className={styles.statValue}>{stats.coursesCompleted}</p>
+        </div>
+        <div className={styles.statCard}>
+          <p className={styles.statLabel}>Exams taken</p>
+          <p className={styles.statValue}>{stats.examsTaken}</p>
+        </div>
+        <div className={styles.statCard}>
+          <p className={styles.statLabel}>Average score</p>
+          <p className={styles.statValue}>{stats.averageScore}%</p>
+        </div>
+      </div>
+
+      <p className={styles.sectionTitle}>Continue learning</p>
+      {courses.length === 0 && (
+        <p className={styles.emptyState}>You haven't started any courses yet.</p>
+      )}
+      {courses.map(course => (
+        <div key={course.id} className={styles.courseRow}>
+          <p className={styles.courseTitle}>{course.title}</p>
+          <div className={styles.progressTrack}>
+            <div className={styles.progressFill} style={{ width: `${course.progress}%` }} />
+          </div>
+          <p className={styles.progressPercent}>{course.progress}%</p>
+          <button className={styles.continueBtn} onClick={() => navigate(course.route_path)}>
+            {course.progress === 100 ? "Review" : "Continue"}
+          </button>
+        </div>
+      ))}
+
+      <p className={styles.sectionTitleSpaced}>Recent exam scores</p>
+      {examResults.length === 0 && (
+        <p className={styles.emptyState}>You haven't taken any exams yet.</p>
+      )}
+      {examResults.map(result => (
+        <div key={result.attemptId} className={styles.examRow}>
+          <div>
+            <p className={styles.examTitle}>
+              {result.courseTitle} · {result.universityAbbr} · {result.year}
+            </p>
+            <p className={styles.examMeta}>{result.timeAgo}</p>
+          </div>
+          <div className={`${styles.scoreBadge} ${scoreClass(result.percent)}`}>
+            {result.percent}%
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default Dashboard;
