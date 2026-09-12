@@ -12,6 +12,7 @@ function AuthPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [popup, setPopup] = useState(null) // { type: 'success' | 'error', message: '' }
 
   const handleAuth = async (e) => {
     e.preventDefault()
@@ -23,19 +24,25 @@ function AuthPage() {
         email,
         password,
         options: {
-          emailRedirectTo: 'https://freshcourse.vercel.app',
+          emailRedirectTo: 'https://freshcourse.vercel.app/dashboard',
           data: {
             full_name: name,
             phone_number: phone,
           },
         },
       })
-      if (error) setError(error.message)
-      else alert('Check your email for the confirmation link!')
+      if (error) {
+        setPopup({ type: 'error', message: error.message })
+      } else {
+        setPopup({ type: 'success', message: 'Check your email for the confirmation link!' })
+      }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) setError(error.message)
-      else navigate('/dashboard')
+      if (error) {
+        setPopup({ type: 'error', message: error.message })
+      } else {
+        navigate('/dashboard')
+      }
     }
     setLoading(false)
   }
@@ -45,12 +52,27 @@ function AuthPage() {
     setError('')
     setName('')
     setPhone('')
+    setPopup(null)
   }
 
   return (
     <div className={styles.page}>
-      <div className={styles.card}>
 
+      {popup && (
+        <div className={styles.popupOverlay}>
+          <div className={`${styles.popup} ${popup.type === 'success' ? styles.popupSuccess : styles.popupError}`}>
+            <div className={styles.popupIcon}>
+              {popup.type === 'success' ? '✓' : '✕'}
+            </div>
+            <p className={styles.popupMessage}>{popup.message}</p>
+            <button className={styles.popupBtn} onClick={() => setPopup(null)}>
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className={styles.card}>
         <div className={styles.logo}>
           Fresh<span className={styles.logoAccent}>Course</span>
         </div>
@@ -78,7 +100,6 @@ function AuthPage() {
         </p>
 
         <form onSubmit={handleAuth} className={styles.form}>
-
           {isSignUp && (
             <div className={styles.field}>
               <label className={styles.label}>Full name</label>
