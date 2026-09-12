@@ -15,13 +15,13 @@ function Home() {
         <div className={styles.ctaGroup}>
           <button 
             className={`${styles.button} ${styles.primaryButton}`} 
-            onClick={() => navigate("/register")}
+            onClick={() => navigate("/auth")}
           >
             Get started
           </button>
           <button 
             className={`${styles.button} ${styles.secondaryButton}`} 
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/auth")}
           >
             Sign in
           </button>
