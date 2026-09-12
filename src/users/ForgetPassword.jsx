@@ -13,7 +13,7 @@ function ForgotPassword() {
     setLoading(true)
     setError('')
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `https://freshcourse.vercel.app/reset-password`,
     })
     if (error) setError(error.message)
     else setSent(true)
