@@ -23,6 +23,7 @@ function AuthPage() {
         email,
         password,
         options: {
+          emailRedirectTo: 'https://freshcourse.vercel.app',
           data: {
             full_name: name,
             phone_number: phone,
